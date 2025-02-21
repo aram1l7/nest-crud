@@ -4,12 +4,19 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    const start = Date.now();
-    console.log(`Incoming request: ${req.method} ${req.url}`);
+    const start = new Date();
+    const url = req.originalUrl;
+
+    console.log(`Start: ${req.method} ${url} at ${start.toISOString()}`);
+
     res.on('finish', () => {
-      const duration = Date.now() - start;
-      console.log(`Request ${req.method} ${req.url} took ${duration}ms`);
+      const end = new Date();
+      const duration = end.getTime() - start.getTime();
+      console.log(
+        `End: ${req.method} ${url} at ${end.toISOString()} (Duration: ${duration}ms)`,
+      );
     });
+
     next();
   }
 }

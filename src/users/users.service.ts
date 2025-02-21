@@ -28,7 +28,11 @@ export class UsersService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException('User with this email already exists');
+          const field = error.meta?.target;
+
+          throw new ConflictException(
+            `User with this ${field as string} already exists`,
+          );
         }
       }
 

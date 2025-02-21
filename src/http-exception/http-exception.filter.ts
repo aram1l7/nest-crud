@@ -4,6 +4,7 @@ import {
   ArgumentsHost,
   HttpException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Response } from 'express';
 
@@ -39,8 +40,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const validationErrors = (exceptionResponse as { message: unknown })
           .message;
 
-        console.log(validationErrors, 'valErros');
-
         if (Array.isArray(validationErrors)) {
           errorResponse = {
             statusCode: status,
@@ -49,6 +48,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
           };
         }
       }
+    } else if (exception instanceof UnauthorizedException) {
+      errorResponse = {
+        statusCode: status,
+        message: 'Unauthorized access',
+      };
     } else if (
       typeof exceptionResponse === 'object' &&
       exceptionResponse !== null &&
