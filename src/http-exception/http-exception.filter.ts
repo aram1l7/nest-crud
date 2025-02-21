@@ -10,8 +10,8 @@ import { Response } from 'express';
 interface ErrorResponse {
   statusCode: number;
   message: string;
-  errors?: string[];
-  error?: string; // Add optional error field
+  errors?: Record<string, string[]>[];
+  error?: string;
 }
 
 @Catch()
@@ -32,26 +32,31 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: 'Something went wrong. Please try again later.',
     };
 
-    // Ensure exceptionResponse is an object before accessing properties
-    if (
-      exception instanceof BadRequestException &&
-      typeof exceptionResponse === 'object' &&
-      'message' in exceptionResponse
-    ) {
-      errorResponse = {
-        statusCode: status,
-        message: 'Validation failed',
-        errors: Array.isArray(exceptionResponse.message)
-          ? exceptionResponse.message
-          : [exceptionResponse.message],
-      };
+    if (exception instanceof BadRequestException) {
+      const exceptionResponse = exception.getResponse();
+
+      if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+        const validationErrors = (exceptionResponse as { message: unknown })
+          .message;
+
+        console.log(validationErrors, 'valErros');
+
+        if (Array.isArray(validationErrors)) {
+          errorResponse = {
+            statusCode: status,
+            message: 'Validation failed',
+            errors: validationErrors,
+          };
+        }
+      }
     } else if (
       typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
       'message' in exceptionResponse
     ) {
       errorResponse = {
         statusCode: status,
-        message: (exceptionResponse as { message: string }).message,
+        message: String((exceptionResponse as { message: unknown }).message),
       };
     } else if (typeof exceptionResponse === 'string') {
       errorResponse = {
@@ -60,7 +65,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     }
 
-    // Attach stack trace in development mode for debugging
     if (isDev) {
       errorResponse = { ...errorResponse, error: exception.stack };
     }

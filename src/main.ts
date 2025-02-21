@@ -18,16 +18,16 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       exceptionFactory: (errors: ValidationError[]) => {
-        return new BadRequestException({
-          statusCode: 400,
-          message: 'Validation failed',
-          errors: errors.map((err) => ({
-            field: err.property,
-            message: err.constraints
-              ? Object.values(err.constraints).join(', ')
-              : 'Invalid value',
-          })),
+        const formattedErrors = errors.map((error) => {
+          const errorConstraints = error.constraints
+            ? Object.values(error.constraints)
+            : [];
+          return {
+            [error.property]: errorConstraints,
+          };
         });
+
+        return new BadRequestException(formattedErrors);
       },
     }),
   );
