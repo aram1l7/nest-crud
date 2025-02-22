@@ -14,18 +14,21 @@ import { hash } from 'bcrypt';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createUser(
-    name: string,
-    email: string,
-    password: string,
-  ): Promise<User> {
+  async createUser(createUserDto: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<User> {
     try {
-      const hashedPassword = await hash(password, 10);
+      const hashedPassword = await hash(createUserDto.password, 10);
 
       return await this.prisma.user.create({
-        data: { name, email, password: hashedPassword },
+        data: { ...createUserDto, password: hashedPassword },
       });
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           const field = error.meta?.target;

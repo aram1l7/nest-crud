@@ -21,7 +21,11 @@ export class UsersController {
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true }))
   createUser(@Body() body: CreateUserDto): Promise<User> {
-    return this.usersService.createUser(body.name, body.email, body.password);
+    return this.usersService.createUser({
+      name: body.name,
+      email: body.email,
+      password: body.password,
+    });
   }
 
   @Get()
