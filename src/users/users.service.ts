@@ -1,114 +1,30 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { hash } from 'bcrypt';
+import { UsersRepository } from './users.repository';
+import { CreateUserDto } from './dto/create-user-dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UsersRepository) {}
 
-  async createUser(createUserDto: {
-    email: string;
-    password: string;
-    name: string;
-  }): Promise<User> {
-    try {
-      const hashedPassword = await hash(createUserDto.password, 10);
-
-      return await this.prisma.user.create({
-        data: { ...createUserDto, password: hashedPassword },
-      });
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          const field = error.meta?.target;
-
-          throw new ConflictException(
-            `User with this ${field as string} already exists`,
-          );
-        }
-      }
-
-      console.error('Unexpected error in createUser:', error);
-      throw new InternalServerErrorException(
-        'Something went wrong, please try again later',
-      );
-    }
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    return this.userRepository.createUser(createUserDto);
   }
 
   async getUsers(): Promise<User[]> {
-    return this.prisma.user.findMany();
+    return this.userRepository.getUsers();
   }
 
   async getUserById(id: number): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
-    return user;
+    return this.userRepository.getUserById(id);
   }
 
-  async updateUser(
-    id: number,
-    name?: string,
-    password?: string,
-  ): Promise<User> {
-    try {
-      const data: Partial<User> = {};
-
-      if (name) data.name = name;
-      if (password) data.password = password;
-
-      if (Object.keys(data).length === 0) {
-        throw new BadRequestException(
-          'At least one field must be provided for update',
-        );
-      }
-
-      return await this.prisma.user.update({
-        where: { id },
-        data,
-      });
-    } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`User with ID ${id} not found`);
-      }
-
-      console.error('Unexpected error in updateUser:', error);
-      throw new InternalServerErrorException(
-        'Something went wrong, please try again later',
-      );
-    }
+  async updateUser(id: number, body: UpdateUserDto): Promise<User> {
+    return this.userRepository.updateUser(id, body);
   }
 
   async deleteUser(id: number): Promise<User> {
-    try {
-      return await this.prisma.user.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`User with ID ${id} not found`);
-      }
-
-      console.error('Unexpected error in deleteUser:', error);
-      throw new InternalServerErrorException(
-        'Something went wrong, please try again later',
-      );
-    }
+    return this.userRepository.deleteUser(id);
   }
 }
