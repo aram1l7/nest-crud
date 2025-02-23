@@ -36,6 +36,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof BadRequestException) {
       const exceptionResponse = exception.getResponse();
 
+      if (
+        typeof exceptionResponse === 'object' &&
+        'message' in exceptionResponse
+      ) {
+        errorResponse.message = exceptionResponse.message as string;
+      }
+
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const validationErrors = (exceptionResponse as { message: unknown })
           .message;

@@ -20,6 +20,10 @@ export class UsersService {
     return this.userRepository.getUserById(id);
   }
 
+  async getUserByEmail(email: string): Promise<User> {
+    return this.userRepository.getUserByEmail(email);
+  }
+
   async updateUser(id: number, body: UpdateUserDto): Promise<User> {
     return this.userRepository.updateUser(id, body);
   }

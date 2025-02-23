@@ -4,6 +4,7 @@ import {
   ConflictException,
   InternalServerErrorException,
   BadRequestException,
+  HttpException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { User } from '@prisma/client';
@@ -55,14 +56,21 @@ export class UsersRepository {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
   async updateUser(id: number, data: UpdateUserDto): Promise<User> {
     const { name, password } = data;
-    try {
-      const existingUser = await this.prisma.user.findUnique({ where: { id } });
-      if (!existingUser) {
-        throw new NotFoundException(`User with ID ${id} not found`);
-      }
+    const existingUser = await this.prisma.user.findUnique({ where: { id } });
 
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    try {
       const updateData: Partial<User> = {};
       updateData.name = name;
 
@@ -84,7 +92,7 @@ export class UsersRepository {
 
       return await this.prisma.user.update({ where: { id }, data: updateData });
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
@@ -99,12 +107,6 @@ export class UsersRepository {
         );
       }
 
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`User with ID ${id} not found`);
-      }
       console.error('Unexpected error in updateUser:', error);
       throw new InternalServerErrorException(
         'Something went wrong, please try again later',
