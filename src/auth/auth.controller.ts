@@ -13,8 +13,8 @@ export class AuthController {
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  async login(@Body() payload: LoginDto) {
-    return this.authService.login(payload.email, payload.password);
+  async login(@Req() request: Request, @Body() payload: LoginDto) {
+    return this.authService.login(payload.email, payload.password, request);
   }
 
   @Get('profile')

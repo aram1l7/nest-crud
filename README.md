@@ -18,9 +18,11 @@ npm install
 ### 3️⃣ **Set Up Environment Variables**
 Create a `.env` file in the root directory and add the following:
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/usersdb"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/yourdb"
 NODE_ENV=development
 JWT_SECRET=customJwtSecret
+REDIS_HOST=localhost or your redis host
+REDIS_PORT=6379 or your redis port
 ```
 
 ### 4️⃣ **Run Migrations (If using Prisma)**
